@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoobiesAI — Text to Speech</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;
+  --border:#e2e0d8;--border2:#ccc9be;
+  --ink:#1a1916;--ink2:#6b6860;--ink3:#a8a59e;
+  --green:#1a7a4a;--green-bg:#edf7f2;--green-bd:#b8dfc9;
+  --amber:#92620a;--amber-bg:#fdf6e8;--amber-bd:#e8d09a;
+  --red:#991b1b;--red-bg:#fef2f2;--red-bd:#fca5a5;
+  --blue:#1d4ed8;--blue-bg:#eff6ff;--blue-bd:#bfdbfe;
+  --pookie:#7c3aed;--pookie-bg:#f5f3ff;--pookie-bd:#c4b5fd;
+  --titlebar-h:0px;
+}
+body.darwin{--titlebar-h:40px;}
+body{background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;min-height:100vh;display:flex;}
+
+.sidebar{width:220px;min-height:100vh;background:var(--ink);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.logo{padding:26px 22px 22px;padding-top:calc(26px + var(--titlebar-h));border-bottom:1px solid rgba(255,255,255,0.07);-webkit-app-region:drag;}
+.logo-word{font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.03em;}
+.logo-sub{font-size:9px;color:rgba(255,255,255,0.25);letter-spacing:0.18em;text-transform:uppercase;margin-top:3px;}
+.nav{flex:1;padding:18px 10px;}
+.nav-lbl{font-size:9px;color:rgba(255,255,255,0.18);letter-spacing:0.2em;text-transform:uppercase;padding:0 10px;margin:14px 0 7px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.04em;transition:all 0.14s;margin-bottom:1px;border:1px solid transparent;user-select:none;text-decoration:none;}
+.nav-item:hover{color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.05);}
+.nav-item.active{color:#fff;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.09);}
+.nav-item svg{opacity:0.55;flex-shrink:0;}
+.nav-item.active svg{opacity:1;}
+.sidebar-foot{padding:14px;border-top:1px solid rgba(255,255,255,0.07);}
+.admin-chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:9px 11px;}
+.admin-av{width:28px;height:28px;background:linear-gradient(135deg,#d4a847,#c47a2b);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:11px;font-weight:700;color:#fff;}
+.admin-name{font-size:11px;color:rgba(255,255,255,0.75);}
+.admin-role{font-size:9px;color:rgba(255,255,255,0.25);margin-top:1px;}
+
+.main{margin-left:220px;flex:1;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:50;margin-top:var(--titlebar-h);-webkit-app-region:drag;}
+.topbar>*{-webkit-app-region:no-drag;}
+.ptitle{font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.02em;}
+.psub{font-size:10px;color:var(--ink3);margin-top:1px;}
+
+.content{padding:28px 32px;flex:1;display:flex;flex-direction:column;gap:20px;}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.14s;border:1px solid transparent;white-space:nowrap;letter-spacing:0.02em;}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn-dark:hover{background:#2a2926;box-shadow:0 3px 10px rgba(0,0,0,0.18);}
+.btn-dark:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;}
+.btn-outline{background:var(--surface);color:var(--ink2);border-color:var(--border);}
+.btn-outline:hover{background:var(--surface2);border-color:var(--border2);color:var(--ink);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#155f39;box-shadow:0 3px 10px rgba(26,122,74,0.25);}
+.btn-green:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-blue:hover{background:#1740b0;box-shadow:0 3px 10px rgba(29,78,216,0.25);}
+.btn-blue:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;}
+
+/* LAYOUT */
+.tts-layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;max-width:1100px;}
+
+/* EDITOR */
+.editor-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.editor-top{padding:16px 22px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.editor-title{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;}
+.char-count{font-size:10px;color:var(--ink3);}
+.char-count.warn{color:var(--amber);}
+.char-count.over{color:var(--red);}
+textarea#tts-text{width:100%;min-height:280px;border:none;outline:none;resize:vertical;background:var(--surface);font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);padding:18px 22px;line-height:1.7;border-bottom:1px solid var(--border);}
+textarea#tts-text::placeholder{color:var(--ink3);}
+.editor-footer{padding:12px 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.qi-label{font-size:9px;color:var(--ink3);letter-spacing:0.12em;text-transform:uppercase;}
+.qi-btn{padding:4px 10px;border-radius:6px;font-size:10px;border:1px solid var(--border);background:var(--surface2);color:var(--ink2);cursor:pointer;transition:all 0.13s;font-family:'JetBrains Mono',monospace;}
+.qi-btn:hover{border-color:var(--border2);color:var(--ink);}
+
+/* SETTINGS CARD */
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:15px;}
+.card-title{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;}
+.card-sub{font-size:10px;color:var(--ink3);line-height:1.5;margin-top:2px;}
+.fld label{display:block;font-size:9px;color:var(--ink3);letter-spacing:0.17em;text-transform:uppercase;margin-bottom:6px;}
+.fld input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);outline:none;transition:border-color 0.18s;}
+.fld input:focus{border-color:var(--ink);}
+.fld input::placeholder{color:var(--ink3);}
+.fld-hint{font-size:9px;color:var(--ink3);margin-top:5px;line-height:1.5;}
+
+.card-divider{height:1px;background:var(--border);}
+
+/* PROGRESS */
+.prog-wrap{display:none;}
+.prog-wrap.show{display:block;}
+.prog-bg{height:5px;background:var(--border);border-radius:10px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:10px;background:var(--ink);transition:width 0.4s ease;}
+.prog-lbl{font-size:9px;color:var(--ink3);margin-top:5px;text-align:center;}
+
+/* STATUS */
+.status-box{border-radius:10px;padding:12px 14px;display:none;align-items:flex-start;gap:10px;font-size:11px;line-height:1.55;}
+.status-box.show{display:flex;}
+.status-box.converting{background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);}
+.status-box.error{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);}
+.status-lbl{font-weight:600;margin-bottom:1px;}
+.status-msg{font-size:10px;opacity:0.85;}
+
+/* RESULT CARD */
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:none;}
+.result-card.show{display:block;}
+.result-top{background:var(--green-bg);border-bottom:1px solid var(--green-bd);padding:14px 18px;display:flex;align-items:center;gap:10px;}
+.result-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 1.8s ease infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.85);}}
+.result-label{font-family:'Bricolage Grotesque',sans-serif;font-size:12px;font-weight:700;color:var(--green);}
+.result-fname{font-size:10px;color:var(--green);opacity:0.7;margin-top:1px;}
+.result-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;}
+
+/* AUDIO PREVIEW */
+.audio-preview{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;display:flex;align-items:center;gap:10px;}
+.ap-play{width:30px;height:30px;border-radius:7px;background:var(--ink);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background 0.13s;}
+.ap-play:hover{background:#2a2926;}
+.ap-play.playing{background:var(--green);}
+.ap-timeline{flex:1;display:flex;align-items:center;gap:8px;}
+.ap-bar{flex:1;height:3px;background:var(--border);border-radius:2px;cursor:pointer;}
+.ap-fill{height:100%;background:var(--ink);border-radius:2px;pointer-events:none;transition:width 0.1s;}
+.ap-time{font-size:9px;color:var(--ink3);white-space:nowrap;}
+
+/* PLAY ON DEVICE */
+.pod-card{background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.pod-header{display:flex;align-items:center;gap:8px;}
+.pod-icon{width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pod-title{font-family:'Bricolage Grotesque',sans-serif;font-size:12px;font-weight:700;color:var(--blue);}
+.pod-sub{font-size:10px;color:var(--blue);opacity:0.7;margin-top:1px;}
+.pod-device-input{width:100%;background:var(--surface);border:1px solid var(--blue-bd);border-radius:7px;padding:8px 11px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);outline:none;transition:border-color 0.18s;}
+.pod-device-input:focus{border-color:var(--blue);}
+.pod-device-input::placeholder{color:var(--ink3);}
+.pod-hint{font-size:9px;color:var(--blue);opacity:0.6;margin-top:4px;line-height:1.5;}
+.pod-status{border-radius:8px;padding:9px 12px;font-size:10px;display:none;align-items:center;gap:8px;line-height:1.5;}
+.pod-status.show{display:flex;}
+.pod-status.pushing{background:rgba(29,78,216,0.07);border:1px solid var(--blue-bd);color:var(--blue);}
+.pod-status.pushed{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green);}
+.pod-status.pod-err{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);}
+
+/* HISTORY */
+.history-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;max-width:1100px;}
+.history-hdr{padding:13px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.history-title{font-family:'Bricolage Grotesque',sans-serif;font-size:12px;font-weight:700;}
+.hist-empty{padding:28px;text-align:center;font-size:11px;color:var(--ink3);}
+.hist-hdr-row{display:grid;grid-template-columns:1fr 130px 130px 80px 80px 36px;gap:10px;padding:7px 22px;font-size:9px;color:var(--ink3);letter-spacing:0.15em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.hist-row{display:grid;grid-template-columns:1fr 130px 130px 80px 80px 36px;align-items:center;gap:10px;padding:11px 22px;border-bottom:1px solid var(--border);transition:background 0.13s;}
+.hist-row:last-child{border-bottom:none;}
+.hist-row:hover{background:var(--surface2);}
+.hist-text{font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-device{font-size:10px;color:var(--ink2);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-time{font-size:10px;color:var(--ink3);}
+.hist-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:600;}
+.hist-badge.done{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);}
+.hist-badge.fail{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);}
+.hist-badge.played{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);}
+.hist-dl{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink3);cursor:pointer;transition:all 0.13s;}
+.hist-dl:hover{background:var(--green-bg);border-color:var(--green-bd);color:var(--green);}
+.hist-dl:disabled{opacity:0.35;cursor:not-allowed;}
+
+/* SPINNER */
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+.spinner-amber{border-color:var(--amber-bd);border-top-color:var(--amber);}
+.spinner-blue{border-color:var(--blue-bd);border-top-color:var(--blue);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;border-radius:9px;padding:10px 17px;font-size:11px;z-index:9999;transform:translateY(55px);opacity:0;transition:all 0.22s ease;display:flex;align-items:center;gap:7px;box-shadow:0 6px 22px rgba(0,0,0,0.22);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.err{background:var(--red);}
+.toast.ok{background:var(--green);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<script>
+(function() {
+  const token  = sessionStorage.getItem('sa_token');
+  const expire = sessionStorage.getItem('sa_expire');
+  if (!token || !expire || (new Date(expire) - Date.now()) / 1000 < 10) {
+    sessionStorage.removeItem('sa_token');
+    sessionStorage.removeItem('sa_expire');
+    window.location.replace('index.html');
+  }
+})();
+</script>
+
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-word">ScoobiesAI</div>
+    <div class="logo-sub">Admin Portal</div>
+  </div>
+  <div class="nav">
+    <div class="nav-lbl">Navigation</div>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Customers
+    </a>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      ATMA Devices
+    </a>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Center
+    </a>
+    <div class="nav-lbl">Content</div>
+    <a class="nav-item" href="content.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      Audio Library
+    </a>
+    <a class="nav-item active" href="tts.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      TTS
+    </a>
+    <div class="nav-lbl">Settings</div>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Blacklist
+    </a>
+  </div>
+  <div class="sidebar-foot">
+    <div class="admin-chip">
+      <div class="admin-av" id="sb-av">A</div>
+      <div>
+        <div class="admin-name" id="sb-name">Admin</div>
+        <div class="admin-role">Super Admin</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-l">
+      <div class="ptitle">Text to Speech</div>
+      <div class="psub">Convert text · download audio · push to toy</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="tts-layout">
+
+      <!-- LEFT: EDITOR -->
+      <div class="editor-card">
+        <div class="editor-top">
+          <div class="editor-title">Enter Text</div>
+          <div class="char-count" id="char-count">0 characters</div>
+        </div>
+        <textarea id="tts-text"
+          placeholder="Type or paste the text you want to convert to speech…"
+          oninput="onTextInput(this)"
+          onkeydown="handleKeydown(event)"></textarea>
+        <div class="editor-footer">
+          <span class="qi-label">Quick:</span>
+          <div class="qi-btn" onclick="insertText('Hello! How are you today?')">Greeting</div>
+          <div class="qi-btn" onclick="insertText('Time for bed, little one. Sweet dreams!')">Bedtime</div>
+          <div class="qi-btn" onclick="insertText('Once upon a time, in a land far away…')">Story opener</div>
+          <div class="qi-btn" onclick="clearText()">Clear</div>
+          <span style="margin-left:auto;font-size:9px;color:var(--ink3);">⌘↵ to generate</span>
+        </div>
+      </div>
+
+      <!-- RIGHT: SETTINGS + RESULT -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <div class="settings-card">
+          <div>
+            <div class="card-title">Settings</div>
+            <div class="card-sub">Device ID is used for TTS conversion and playback.</div>
+          </div>
+          <div class="fld">
+            <label>Device ID</label>
+            <input type="text" id="device-id" placeholder="e.g. hi123"
+              onkeydown="if(event.key==='Enter')generate()">
+            <div class="fld-hint">Passed to the TTS API and pre-filled as the push target.</div>
+          </div>
+
+          <div class="prog-wrap" id="prog-wrap">
+            <div class="prog-bg"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+            <div class="prog-lbl" id="prog-lbl">Converting…</div>
+          </div>
+
+          <div class="status-box converting" id="status-converting">
+            <div class="spinner spinner-amber"></div>
+            <div>
+              <div class="status-lbl">Converting…</div>
+              <div class="status-msg">Sending to speech engine — usually a few seconds.</div>
+            </div>
+          </div>
+          <div class="status-box error" id="status-error">
+            <div style="font-size:15px;">✗</div>
+            <div>
+              <div class="status-lbl">Conversion failed</div>
+              <div class="status-msg" id="error-msg"></div>
+            </div>
+          </div>
+
+          <button class="btn btn-dark" id="gen-btn"
+            style="width:100%;justify-content:center;padding:12px;"
+            onclick="generate()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            Generate Audio
+          </button>
+        </div>
+
+        <!-- RESULT CARD — visible after success -->
+        <div class="result-card" id="result-card">
+          <div class="result-top">
+            <div class="result-dot"></div>
+            <div>
+              <div class="result-label">Audio Ready</div>
+              <div class="result-fname" id="result-fname">tts_device.mp3</div>
+            </div>
+          </div>
+          <div class="result-body">
+
+            <!-- Preview player -->
+            <div class="audio-preview">
+              <button class="ap-play" id="ap-play-btn" onclick="togglePreview()">
+                <svg id="ap-icon" width="12" height="12" viewBox="0 0 24 24" fill="#fff" stroke="none">
+                  <polygon points="5,3 19,12 5,21"/>
+                </svg>
+              </button>
+              <div class="ap-timeline">
+                <span class="ap-time" id="ap-cur">0:00</span>
+                <div class="ap-bar" id="ap-bar" onclick="scrubPreview(event)">
+                  <div class="ap-fill" id="ap-fill" style="width:0%"></div>
+                </div>
+                <span class="ap-time" id="ap-dur">0:00</span>
+              </div>
+            </div>
+
+            <!-- Download -->
+            <button class="btn btn-green" id="dl-btn"
+              style="width:100%;justify-content:center;"
+              onclick="triggerDownload()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download Audio
+            </button>
+
+            <div class="card-divider"></div>
+
+            <!-- PLAY ON DEVICE -->
+            <div class="pod-card">
+              <div class="pod-header">
+                <div class="pod-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+                    <polygon points="5,3 19,12 5,21"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="pod-title">Play on Device</div>
+                  <div class="pod-sub">Push audio to the toy over the air</div>
+                </div>
+              </div>
+
+              <div>
+                <div style="font-size:9px;color:var(--blue);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px;opacity:0.75;">Target Device MAC / ID</div>
+                <input class="pod-device-input" type="text" id="pod-device-id"
+                  placeholder="cc:ba:97:12:c6:3e"
+                  onkeydown="if(event.key==='Enter')playOnDevice()">
+                <div class="pod-hint">Pre-filled from Device ID above. Edit if push target differs.</div>
+              </div>
+
+              <div class="pod-status pushing" id="pod-pushing">
+                <div class="spinner spinner-blue"></div>
+                <span>Pushing audio to device…</span>
+              </div>
+              <div class="pod-status pushed" id="pod-success">
+                <span style="font-size:14px;">✓</span>
+                <span>Playing on device now!</span>
+              </div>
+              <div class="pod-status pod-err" id="pod-error">
+                <span style="font-size:14px;">✗</span>
+                <span id="pod-err-msg">Push failed.</span>
+              </div>
+
+              <button class="btn btn-blue" id="pod-btn"
+                style="width:100%;justify-content:center;"
+                onclick="playOnDevice()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5,3 19,12 5,21"/>
+                </svg>
+                Play on Device
+              </button>
+            </div>
+
+          </div>
+        </div><!-- /result-card -->
+
+      </div><!-- /right col -->
+    </div><!-- /tts-layout -->
+
+    <!-- HISTORY -->
+    <div class="history-card">
+      <div class="history-hdr">
+        <div class="history-title">Generation History</div>
+        <button class="btn btn-outline" style="padding:5px 12px;font-size:10px;" onclick="clearHistory()">Clear</button>
+      </div>
+      <div id="history-body">
+        <div class="hist-empty">No generations yet — results will appear here.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="tmsg">Done</span>
+</div>
+
+<audio id="preview-audio"></audio>
+
+<script>
+const TTS_BASE  = 'https://api.scoobies.ai/api';
+const POD_URL   = 'https://aispea-cdn.z33.fun/api/device/push_url_to_device';
+const POD_TOKEN = '75113c129bcc22fcc7936c2cba48a92380df6545c581e6ef2f094e87c59c0319';
+
+let lastDeviceId = null;
+let history      = JSON.parse(localStorage.getItem('tts_history') || '[]');
+const previewEl  = document.getElementById('preview-audio');
+
+// ─── INIT ─────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const u = sessionStorage.getItem('sa_username');
+  if (u) {
+    const av = document.getElementById('sb-av');
+    const nm = document.getElementById('sb-name');
+    if (av) av.textContent = u[0].toUpperCase();
+    if (nm) nm.textContent = u;
+  }
+  renderHistory();
+});
+
+// ─── TEXT HELPERS ─────────────────────────────────────
+function onTextInput(el) {
+  const len = el.value.length;
+  const cc  = document.getElementById('char-count');
+  cc.textContent = len.toLocaleString() + ' character' + (len !== 1 ? 's' : '');
+  cc.className   = 'char-count' + (len > 2000 ? ' over' : len > 1500 ? ' warn' : '');
+}
+function insertText(t) {
+  const ta = document.getElementById('tts-text');
+  ta.value = t; onTextInput(ta); ta.focus();
+}
+function clearText() {
+  const ta = document.getElementById('tts-text');
+  ta.value = ''; onTextInput(ta); ta.focus();
+}
+function handleKeydown(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
+}
+
+// ─── GENERATE ─────────────────────────────────────────
+async function generate() {
+  const text     = document.getElementById('tts-text').value.trim();
+  const deviceId = document.getElementById('device-id').value.trim();
+
+  if (!text)     { showToast('Enter some text first', true); return; }
+  if (!deviceId) { showToast('Enter a Device ID', true); return; }
+
+  lastDeviceId = deviceId;
+  setUIState('loading');
+  document.getElementById('result-card').classList.remove('show');
+  resetPodStatus();
+
+  try {
+    // ── Step 1: Convert ────────────────────────────────
+    setProgress(30, 'Sending to speech engine…');
+
+    const body = new URLSearchParams();
+    body.append('text', text);
+    body.append('device_id', deviceId);
+
+    const convertRes = await fetch(`${TTS_BASE}/convert_text_to_speech`, {
+      method:  'POST',
+      headers: { 'accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body:    body.toString(),
+    });
+    if (!convertRes.ok) {
+      const e = await convertRes.json().catch(() => ({}));
+      throw new Error(e.detail || e.message || `Conversion failed (${convertRes.status})`);
+    }
+
+    setProgress(70, 'Fetching audio…');
+
+    // ── Step 2: Download (for preview + browser save) ──
+    const dlRes = await fetch(`${TTS_BASE}/download?device_id=${encodeURIComponent(deviceId)}`, {
+      headers: { 'accept': 'application/json' },
+    });
+    if (!dlRes.ok) {
+      const e = await dlRes.json().catch(() => ({}));
+      throw new Error(e.detail || e.message || `Download failed (${dlRes.status})`);
+    }
+
+    setProgress(92, 'Preparing…');
+
+    // Build a local blob URL for the in-page player + browser download
+    const blob      = await dlRes.blob();
+    const blobUrl   = URL.createObjectURL(blob);
+
+    // The stable public URL used as voice_url for the push API
+    const publicUrl = `${TTS_BASE}/download?device_id=${encodeURIComponent(deviceId)}`;
+
+    setProgress(100, 'Done!');
+    setUIState('success');
+
+    // Auto-download
+    triggerDownloadFromUrl(blobUrl, `tts_${deviceId}.mp3`);
+
+    // Show result card
+    document.getElementById('result-fname').textContent = `tts_${deviceId}.mp3`;
+    document.getElementById('result-card').classList.add('show');
+    document.getElementById('pod-device-id').value = deviceId;
+
+    // Preview uses blob (fast, local)
+    previewEl.src = blobUrl;
+    document.getElementById('ap-fill').style.width = '0%';
+    document.getElementById('ap-cur').textContent  = '0:00';
+    document.getElementById('ap-dur').textContent  = '0:00';
+
+    // Store public URL for push — NOT the blob
+    previewEl._publicUrl = publicUrl;
+
+    addHistory({ text, deviceId, time: new Date().toISOString(), status: 'done', url: publicUrl });
+    showToast('Audio generated & downloaded', false, true);
+
+  } catch (e) {
+    setUIState('error', e.message);
+    addHistory({ text, deviceId, time: new Date().toISOString(), status: 'fail', url: null });
+    showToast(e.message, true);
+  }
+}
+
+// ─── DOWNLOAD ─────────────────────────────────────────
+function triggerDownloadFromUrl(url, filename) {
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function triggerDownload() {
+  // Re-fetch and download fresh blob
+  if (!lastDeviceId) return;
+  const btn = document.getElementById('dl-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div> Downloading…`;
+
+  fetch(`${TTS_BASE}/download?device_id=${encodeURIComponent(lastDeviceId)}`, {
+    headers: { 'accept': 'application/json' },
+  })
+    .then(r => r.blob())
+    .then(blob => triggerDownloadFromUrl(URL.createObjectURL(blob), `tts_${lastDeviceId}.mp3`))
+    .catch(e => showToast(e.message, true))
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Audio`;
+    });
+}
+
+// ─── PLAY ON DEVICE ───────────────────────────────────
+async function playOnDevice() {
+  const podDeviceId = document.getElementById('pod-device-id').value.trim();
+  const voiceUrl    = previewEl._publicUrl;
+
+  if (!podDeviceId) { showToast('Enter a Device ID', true); return; }
+  if (!voiceUrl)    { showToast('Generate audio first', true); return; }
+
+  const btn = document.getElementById('pod-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div> Pushing…`;
+
+  resetPodStatus();
+  document.getElementById('pod-pushing').classList.add('show');
+
+  try {
+    const res = await fetch(POD_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Token': POD_TOKEN },
+      body:    JSON.stringify({ device_id: podDeviceId, voice_url: voiceUrl }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.detail || e.message || `Push failed (${res.status})`);
+    }
+
+    document.getElementById('pod-pushing').classList.remove('show');
+    document.getElementById('pod-success').classList.add('show');
+    showToast('Playing on device!', false, true);
+
+    // Mark latest history entry as played
+    const entry = history.find(h => h.status === 'done' && h.deviceId === lastDeviceId);
+    if (entry) { entry.played = true; localStorage.setItem('tts_history', JSON.stringify(history)); renderHistory(); }
+
+  } catch (e) {
+    document.getElementById('pod-pushing').classList.remove('show');
+    document.getElementById('pod-err-msg').textContent = e.message;
+    document.getElementById('pod-error').classList.add('show');
+    showToast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg> Play on Device`;
+  }
+}
+
+function resetPodStatus() {
+  ['pod-pushing','pod-success','pod-error'].forEach(id =>
+    document.getElementById(id).classList.remove('show')
+  );
+}
+
+// ─── PREVIEW PLAYER ───────────────────────────────────
+function togglePreview() {
+  if (previewEl.paused) previewEl.play().catch(() => showToast('Cannot play audio', true));
+  else previewEl.pause();
+}
+function scrubPreview(e) {
+  const rect = document.getElementById('ap-bar').getBoundingClientRect();
+  if (previewEl.duration) previewEl.currentTime = ((e.clientX - rect.left) / rect.width) * previewEl.duration;
+}
+
+previewEl.addEventListener('play', () => {
+  const ic = document.getElementById('ap-icon');
+  ic.setAttribute('fill','none'); ic.setAttribute('stroke','#fff'); ic.setAttribute('stroke-width','2.5');
+  ic.innerHTML = '<line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/>';
+  document.getElementById('ap-play-btn').classList.add('playing');
+});
+previewEl.addEventListener('pause', () => {
+  const ic = document.getElementById('ap-icon');
+  ic.setAttribute('fill','#fff'); ic.setAttribute('stroke','none'); ic.setAttribute('stroke-width','0');
+  ic.innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+  document.getElementById('ap-play-btn').classList.remove('playing');
+});
+previewEl.addEventListener('ended', () => document.getElementById('ap-play-btn').classList.remove('playing'));
+previewEl.addEventListener('timeupdate', () => {
+  const c = previewEl.currentTime, d = previewEl.duration || 0;
+  document.getElementById('ap-fill').style.width = (d ? c/d*100 : 0) + '%';
+  document.getElementById('ap-cur').textContent  = fmtTime(c);
+  document.getElementById('ap-dur').textContent  = fmtTime(d);
+});
+
+// ─── UI STATE ─────────────────────────────────────────
+const GEN_BTN_HTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Generate Audio`;
+
+function setUIState(state, errMsg = '') {
+  const btn = document.getElementById('gen-btn');
+  document.getElementById('status-converting').classList.remove('show');
+  document.getElementById('status-error').classList.remove('show');
+
+  if (state === 'loading') {
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner" style="width:13px;height:13px;border-width:2px;"></div> Generating…`;
+    document.getElementById('status-converting').classList.add('show');
+    document.getElementById('prog-wrap').classList.add('show');
+  } else if (state === 'success') {
+    btn.disabled = false; btn.innerHTML = GEN_BTN_HTML;
+    setTimeout(() => document.getElementById('prog-wrap').classList.remove('show'), 1400);
+  } else if (state === 'error') {
+    btn.disabled = false; btn.innerHTML = GEN_BTN_HTML;
+    document.getElementById('error-msg').textContent = errMsg;
+    document.getElementById('status-error').classList.add('show');
+    document.getElementById('prog-wrap').classList.remove('show');
+  }
+}
+function setProgress(pct, label) {
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-lbl').textContent  = label;
+}
+
+// ─── HISTORY ──────────────────────────────────────────
+function addHistory(entry) {
+  history.unshift(entry);
+  if (history.length > 50) history = history.slice(0, 50);
+  localStorage.setItem('tts_history', JSON.stringify(history));
+  renderHistory();
+}
+function clearHistory() {
+  history = []; localStorage.removeItem('tts_history'); renderHistory();
+}
+function renderHistory() {
+  const body = document.getElementById('history-body');
+  if (!history.length) {
+    body.innerHTML = `<div class="hist-empty">No generations yet.</div>`; return;
+  }
+  body.innerHTML = `
+    <div class="hist-hdr-row">
+      <div>Text</div><div>Device ID</div><div>Time</div><div>TTS</div><div>Played</div><div></div>
+    </div>` +
+    history.map(h => `
+      <div class="hist-row">
+        <div class="hist-text" title="${esc(h.text)}">${esc(h.text)}</div>
+        <div class="hist-device">${esc(h.deviceId)}</div>
+        <div class="hist-time">${fmtDate(h.time)}</div>
+        <div><span class="hist-badge ${h.status === 'done' ? 'done' : 'fail'}">${h.status === 'done' ? '✓ Done' : '✗ Failed'}</span></div>
+        <div>${h.played ? `<span class="hist-badge played">▶ Pushed</span>` : `<span style="font-size:9px;color:var(--ink3);">—</span>`}</div>
+        <div>${h.status === 'done' && h.url
+          ? `<button class="hist-dl" onclick="triggerDownloadFromUrl('${esc(h.url)}','tts_${esc(h.deviceId)}.mp3')" title="Re-download">
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+             </button>`
+          : `<button class="hist-dl" disabled>—</button>`}
+        </div>
+      </div>`).join('');
+}
+
+// ─── UTILS ────────────────────────────────────────────
+function fmtTime(s) {
+  if (!s || isNaN(s)) return '0:00';
+  return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0');
+}
+function fmtDate(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) + ' · ' +
+           d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+  } catch { return iso; }
+}
+function esc(s) {
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+let _tt;
+function showToast(m, isErr=false, isOk=false) {
+  const t = document.getElementById('toast');
+  document.getElementById('tmsg').textContent = m;
+  t.classList.remove('err','ok');
+  if (isErr) t.classList.add('err'); else if (isOk) t.classList.add('ok');
+  t.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
