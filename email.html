@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoobiesAI — GIF Mailer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;
+  --border:#e2e0d8;--border2:#ccc9be;
+  --ink:#1a1916;--ink2:#6b6860;--ink3:#a8a59e;
+  --green:#1a7a4a;--green-bg:#edf7f2;--green-bd:#b8dfc9;
+  --amber:#92620a;--amber-bg:#fdf6e8;--amber-bd:#e8d09a;
+  --red:#991b1b;--red-bg:#fef2f2;--red-bd:#fca5a5;
+  --blue:#1d4ed8;--blue-bg:#eff6ff;--blue-bd:#bfdbfe;
+  --adhya:#0369a1;--adhya-bg:#f0f9ff;--adhya-bd:#bae6fd;
+  --harshita:#7c3aed;--harshita-bg:#f5f3ff;--harshita-bd:#c4b5fd;
+  --titlebar-h:0px;
+}
+body.darwin{--titlebar-h:40px;}
+body{background:var(--bg);color:var(--ink);font-family:'JetBrains Mono',monospace;min-height:100vh;display:flex;}
+
+/* SIDEBAR */
+.sidebar{width:220px;min-height:100vh;background:var(--ink);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.logo{padding:26px 22px 22px;padding-top:calc(26px + var(--titlebar-h));border-bottom:1px solid rgba(255,255,255,0.07);-webkit-app-region:drag;}
+.logo-word{font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.03em;}
+.logo-sub{font-size:9px;color:rgba(255,255,255,0.25);letter-spacing:0.18em;text-transform:uppercase;margin-top:3px;}
+.nav{flex:1;padding:18px 10px;}
+.nav-lbl{font-size:9px;color:rgba(255,255,255,0.18);letter-spacing:0.2em;text-transform:uppercase;padding:0 10px;margin:14px 0 7px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.04em;transition:all 0.14s;margin-bottom:1px;border:1px solid transparent;user-select:none;text-decoration:none;}
+.nav-item:hover{color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.05);}
+.nav-item.active{color:#fff;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.09);}
+.nav-item svg{opacity:0.55;flex-shrink:0;}
+.nav-item.active svg{opacity:1;}
+.sidebar-foot{padding:14px;border-top:1px solid rgba(255,255,255,0.07);}
+.admin-chip{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:9px 11px;}
+.admin-av{width:28px;height:28px;background:linear-gradient(135deg,#d4a847,#c47a2b);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:11px;font-weight:700;color:#fff;}
+.admin-name{font-size:11px;color:rgba(255,255,255,0.75);}
+.admin-role{font-size:9px;color:rgba(255,255,255,0.25);margin-top:1px;}
+
+.main{margin-left:220px;flex:1;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:50;margin-top:var(--titlebar-h);-webkit-app-region:drag;}
+.topbar>*{-webkit-app-region:no-drag;}
+.topbar-l{flex:1;}
+.ptitle{font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:700;letter-spacing:-0.02em;}
+.psub{font-size:10px;color:var(--ink3);margin-top:1px;}
+.content{padding:24px 28px;flex:1;display:flex;flex-direction:column;gap:20px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.14s;border:1px solid transparent;white-space:nowrap;letter-spacing:0.02em;}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn-dark:hover{background:#2a2926;box-shadow:0 3px 10px rgba(0,0,0,0.18);}
+.btn-dark:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;}
+.btn-outline{background:var(--surface);color:var(--ink2);border-color:var(--border);}
+.btn-outline:hover{background:var(--surface2);border-color:var(--border2);color:var(--ink);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#155f39;box-shadow:0 3px 10px rgba(26,122,74,0.25);}
+.btn-green:disabled{opacity:0.45;cursor:not-allowed;box-shadow:none;}
+
+/* PAGE LAYOUT */
+.page-layout{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:16px;}
+.card-title{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;}
+.card-sub{font-size:10px;color:var(--ink3);line-height:1.55;margin-top:2px;}
+
+/* FIELDS */
+.fld{display:flex;flex-direction:column;gap:6px;}
+.fld label{font-size:9px;color:var(--ink3);letter-spacing:0.17em;text-transform:uppercase;}
+.fld input,.fld textarea,.fld select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);outline:none;transition:border-color 0.18s;}
+.fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--ink);}
+.fld input::placeholder,.fld textarea::placeholder{color:var(--ink3);}
+.fld textarea{resize:none;line-height:1.6;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* USER TOGGLE */
+.user-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.user-opt{padding:14px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;transition:all 0.14s;display:flex;flex-direction:column;gap:5px;}
+.user-opt:hover{border-color:var(--border2);}
+.user-opt.adhya.sel{background:var(--adhya-bg);border-color:var(--adhya);}
+.user-opt.harshita.sel{background:var(--harshita-bg);border-color:var(--harshita);}
+.user-opt-name{font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:var(--ink2);}
+.user-opt.adhya.sel .user-opt-name{color:var(--adhya);}
+.user-opt.harshita.sel .user-opt-name{color:var(--harshita);}
+.user-opt-link{font-size:9px;color:var(--ink3);letter-spacing:0.03em;}
+.user-opt.sel .user-opt-link{opacity:0.7;}
+.user-opt-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);margin-left:auto;display:flex;align-items:center;justify-content:center;transition:all 0.14s;flex-shrink:0;}
+.user-opt.sel .user-opt-check{border-color:currentColor;background:currentColor;}
+.user-opt-row{display:flex;align-items:center;gap:8px;}
+.user-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;flex-shrink:0;}
+.user-avatar.adhya{background:var(--adhya-bg);color:var(--adhya);border:1px solid var(--adhya-bd);}
+.user-avatar.harshita{background:var(--harshita-bg);color:var(--harshita);border:1px solid var(--harshita-bd);}
+
+/* MEETING LINK BADGE */
+.meeting-badge{display:flex;align-items:center;gap:10px;background:var(--green-bg);border:1px solid var(--green-bd);border-radius:9px;padding:11px 14px;}
+.meeting-badge-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.meeting-badge-label{font-size:9px;color:var(--green);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:2px;}
+.meeting-badge-url{font-size:11px;color:var(--green);font-weight:600;word-break:break-all;}
+
+/* GIF UPLOAD ZONE */
+.gif-upload-zone{border:2px dashed var(--border);border-radius:12px;padding:28px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:all 0.18s;background:var(--surface2);position:relative;}
+.gif-upload-zone:hover,.gif-upload-zone.drag-over{border-color:var(--ink);background:#f0efe9;}
+.gif-upload-zone.has-gif{border-style:solid;border-color:var(--ink);background:var(--surface);}
+.gif-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.gif-upload-icon{width:40px;height:40px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink3);}
+.gif-upload-label{font-size:11px;color:var(--ink2);font-weight:500;}
+.gif-upload-hint{font-size:10px;color:var(--ink3);text-align:center;line-height:1.6;}
+.gif-preview-wrap{display:flex;flex-direction:column;gap:10px;width:100%;}
+.gif-preview-img{width:100%;max-height:180px;object-fit:contain;border-radius:8px;display:block;}
+.gif-preview-meta{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--ink2);}
+.gif-preview-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;}
+.gif-preview-size{color:var(--ink3);}
+.gif-clear-btn{background:none;border:none;cursor:pointer;color:var(--ink3);font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 7px;border-radius:5px;border:1px solid var(--border);transition:all 0.13s;}
+.gif-clear-btn:hover{color:var(--red);border-color:var(--red-bd);background:var(--red-bg);}
+.gif-info-row{display:flex;align-items:center;gap:8px;background:var(--green-bg);border:1px solid var(--green-bd);border-radius:8px;padding:9px 12px;}
+.gif-info-row svg{flex-shrink:0;color:var(--green);}
+.gif-info-text{font-size:10px;color:var(--green);line-height:1.5;}
+
+/* SECRET CODE */
+.code-input-wrap{position:relative;}
+.code-input-wrap input{padding-right:40px;letter-spacing:0.18em;font-size:14px;}
+.code-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink3);padding:4px;transition:color 0.13s;}
+.code-toggle:hover{color:var(--ink);}
+.code-status{display:flex;align-items:center;gap:7px;font-size:10px;margin-top:6px;}
+.code-status.valid{color:var(--green);}
+.code-status.invalid{color:var(--red);}
+.code-status.empty{color:var(--ink3);}
+
+/* EMAIL PREVIEW CARD */
+.preview-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.preview-header{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;}
+.preview-title{font-family:'Bricolage Grotesque',sans-serif;font-size:12px;font-weight:700;}
+.preview-badge{font-size:9px;color:var(--ink3);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 8px;letter-spacing:0.1em;text-transform:uppercase;}
+.preview-body{padding:16px;}
+.preview-email-wrap{background:#f9f9f7;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.preview-email-head{background:#fff;border-bottom:1px solid var(--border);padding:10px 14px;display:flex;flex-direction:column;gap:4px;}
+.preview-email-meta{font-size:10px;color:var(--ink3);display:flex;gap:6px;}
+.preview-email-meta span{color:var(--ink2);}
+.preview-email-subject{font-size:12px;font-weight:600;color:var(--ink);}
+.preview-email-body{padding:14px;}
+.preview-message{font-size:11px;color:var(--ink2);line-height:1.7;margin-bottom:12px;white-space:pre-wrap;word-break:break-word;}
+.preview-gif-frame{border:1px solid var(--border);border-radius:7px;overflow:hidden;position:relative;background:var(--surface2);min-height:80px;display:flex;align-items:center;justify-content:center;}
+.preview-gif-frame img{width:100%;display:block;max-height:180px;object-fit:contain;}
+.preview-gif-empty{font-size:10px;color:var(--ink3);text-align:center;padding:20px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.preview-gif-cta{font-size:10px;color:var(--ink3);text-align:center;margin-top:8px;line-height:1.6;}
+.preview-gif-cta span{color:var(--blue);}
+
+/* RIGHT PANEL ACTIONS */
+.actions-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;position:sticky;top:76px;}
+.action-divider{height:1px;background:var(--border);}
+
+/* SEND STATUS */
+.send-status{border-radius:9px;padding:10px 13px;font-size:10px;display:none;align-items:center;gap:8px;line-height:1.5;}
+.send-status.show{display:flex;}
+.send-status.sending{background:var(--amber-bg);border:1px solid var(--amber-bd);color:var(--amber);}
+.send-status.sent{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green);}
+.send-status.send-err{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);}
+
+/* CHECKLIST */
+.checklist{display:flex;flex-direction:column;gap:6px;}
+.check-item{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink3);}
+.check-item.ok{color:var(--green);}
+.check-item.fail{color:var(--red);}
+.check-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0;}
+.check-item.ok .check-dot{background:var(--green);}
+.check-item.fail .check-dot{background:var(--red);}
+
+/* SPINNER */
+.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+.spinner-amber{border-color:var(--amber-bd);border-top-color:var(--amber);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;border-radius:9px;padding:10px 17px;font-size:11px;z-index:9999;transform:translateY(55px);opacity:0;transition:all 0.22s ease;display:flex;align-items:center;gap:7px;box-shadow:0 6px 22px rgba(0,0,0,0.22);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.err{background:var(--red);}
+.toast.ok{background:var(--green);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<script>
+(function() {
+  const token  = sessionStorage.getItem('sa_token');
+  const expire = sessionStorage.getItem('sa_expire');
+  if (!token || !expire || (new Date(expire) - Date.now()) / 1000 < 10) {
+    sessionStorage.removeItem('sa_token');
+    sessionStorage.removeItem('sa_expire');
+    window.location.replace('index.html');
+  }
+})();
+</script>
+
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-word">ScoobiesAI</div>
+    <div class="logo-sub">Admin Portal</div>
+  </div>
+  <div class="nav">
+    <div class="nav-lbl">Navigation</div>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Customers
+    </a>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      ATMA Devices
+    </a>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Center
+    </a>
+    <div class="nav-lbl">Content</div>
+    <a class="nav-item" href="content.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      Audio Library
+    </a>
+    <a class="nav-item" href="tts.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      TTS
+    </a>
+    <div class="nav-lbl">Reports</div>
+    <a class="nav-item" href="log.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Daily Logs
+    </a>
+    <div class="nav-lbl">Tools</div>
+    <a class="nav-item" href="qr.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="17" y="17" width="4" height="4"/><rect x="14" y="14" width="3" height="3"/></svg>
+      QR Generator
+    </a>
+    <a class="nav-item active" href="gifmail.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
+      GIF Mailer
+    </a>
+    <div class="nav-lbl">Settings</div>
+    <a class="nav-item" href="index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      Blacklist
+    </a>
+  </div>
+  <div class="sidebar-foot">
+    <div class="admin-chip">
+      <div class="admin-av" id="sb-av">A</div>
+      <div>
+        <div class="admin-name" id="sb-name">Admin</div>
+        <div class="admin-role">Super Admin</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-l">
+      <div class="ptitle">GIF Mailer</div>
+      <div class="psub">Send your branded GIF embedded inline — links to a meeting. Requires secret code.</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="page-layout">
+
+      <!-- ── LEFT: COMPOSE ── -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- STEP 1: SENDER -->
+        <div class="card">
+          <div>
+            <div class="card-title">Step 1 — Who is sending?</div>
+            <div class="card-sub">Each sender has a unique meeting link the GIF will redirect to.</div>
+          </div>
+          <div class="user-toggle">
+            <div class="user-opt adhya sel" id="opt-adhya" onclick="selectUser('adhya')">
+              <div class="user-opt-row">
+                <div class="user-avatar adhya">A</div>
+                <div>
+                  <div class="user-opt-name">Adhya</div>
+                  <div class="user-opt-link">meeting.scoobies.ai/adhya</div>
+                </div>
+                <div class="user-opt-check">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+            </div>
+            <div class="user-opt harshita" id="opt-harshita" onclick="selectUser('harshita')">
+              <div class="user-opt-row">
+                <div class="user-avatar harshita">H</div>
+                <div>
+                  <div class="user-opt-name">Harshita</div>
+                  <div class="user-opt-link">meeting.scoobies.ai/harshita</div>
+                </div>
+                <div class="user-opt-check">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="meeting-badge" id="meeting-badge">
+            <div class="meeting-badge-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M15 10l4.553-2.277A1 1 0 0 1 21 8.63v6.74a1 1 0 0 1-1.447.894L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>
+            </div>
+            <div>
+              <div class="meeting-badge-label">GIF click target</div>
+              <div class="meeting-badge-url" id="meeting-url">https://meeting.scoobies.ai/adhya</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: RECIPIENT & SUBJECT -->
+        <div class="card">
+          <div>
+            <div class="card-title">Step 2 — Recipient & Subject</div>
+            <div class="card-sub">Where the email goes and what it says.</div>
+          </div>
+          <div class="form-row">
+            <div class="fld">
+              <label>To (email address)</label>
+              <input type="email" id="inp-to" placeholder="parent@example.com" oninput="updatePreview();updateChecklist();">
+            </div>
+            <div class="fld">
+              <label>Subject line</label>
+              <input type="text" id="inp-subject" placeholder="Join our session!" oninput="updatePreview();updateChecklist();">
+            </div>
+          </div>
+          <div class="fld">
+            <label>Message (shown above GIF)</label>
+            <textarea id="inp-body" rows="4"
+              placeholder="Hi! We'd love to connect with you. Click the GIF below to join our meeting…"
+              oninput="updatePreview()"></textarea>
+          </div>
+        </div>
+
+        <!-- STEP 3: GIF UPLOAD -->
+        <div class="card">
+          <div>
+            <div class="card-title">Step 3 — Your GIF</div>
+            <div class="card-sub">Upload your branded GIF. It will be embedded inline in the email (no external link needed) and clicking it will open the meeting.</div>
+          </div>
+
+          <!-- Upload zone — hidden once a GIF is loaded -->
+          <div class="gif-upload-zone" id="gif-upload-zone"
+            ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+            <input type="file" id="gif-file-input" accept="image/gif" onchange="onFileChange(event)">
+            <div class="gif-upload-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <div class="gif-upload-label">Drop your GIF here or click to browse</div>
+            <div class="gif-upload-hint">Only .gif files · Max recommended 3 MB<br>Embedded inline — no hosting required</div>
+          </div>
+
+          <!-- Loaded GIF preview (shown after upload) -->
+          <div id="gif-loaded-wrap" style="display:none;flex-direction:column;gap:10px;">
+            <img id="gif-loaded-img" src="" alt="Your GIF" class="gif-preview-img">
+            <div class="gif-preview-meta">
+              <div>
+                <div class="gif-preview-name" id="gif-loaded-name">—</div>
+                <div class="gif-preview-size" id="gif-loaded-size">—</div>
+              </div>
+              <button class="gif-clear-btn" onclick="clearGif()">Remove</button>
+            </div>
+            <div class="gif-info-row">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="gif-info-text">This GIF will be embedded directly in the email as inline data — recipients see it without clicking any link.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: SECRET CODE -->
+        <div class="card">
+          <div>
+            <div class="card-title">Step 4 — Secret Code</div>
+            <div class="card-sub">Verified server-side before the email is sent — prevents accidental or unauthorised sends.</div>
+          </div>
+          <div class="fld">
+            <label>Enter secret code</label>
+            <div class="code-input-wrap">
+              <input type="password" id="inp-code" placeholder="••••••••"
+                oninput="onCodeInput()" autocomplete="off" spellcheck="false">
+              <button class="code-toggle" id="code-toggle" onclick="toggleCodeVis()" title="Show / hide">
+                <svg id="eye-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="code-status empty" id="code-status">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span id="code-status-text">Enter the shared secret code to unlock sending</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── RIGHT: PREVIEW + ACTIONS ── -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- EMAIL PREVIEW -->
+        <div class="preview-card">
+          <div class="preview-header">
+            <div class="preview-title">Email Preview</div>
+            <div class="preview-badge">live</div>
+          </div>
+          <div class="preview-body">
+            <div class="preview-email-wrap">
+              <div class="preview-email-head">
+                <div class="preview-email-meta">To: <span id="prev-to">—</span></div>
+                <div class="preview-email-meta">From: <span id="prev-from">adhya@scoobies.co.in</span></div>
+                <div class="preview-email-subject" id="prev-subject">—</div>
+              </div>
+              <div class="preview-email-body">
+                <div class="preview-message" id="prev-body">Your message will appear here.</div>
+                <div class="preview-gif-frame" id="prev-gif-frame">
+                  <div class="preview-gif-empty" id="prev-gif-empty">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    No GIF uploaded yet
+                  </div>
+                  <img id="prev-gif-img" src="" alt="GIF preview" style="display:none;width:100%;max-height:180px;object-fit:contain;">
+                </div>
+                <div class="preview-gif-cta" id="prev-gif-cta" style="display:none;">
+                  Clicking opens <span id="prev-cta-link">meeting.scoobies.ai/adhya</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEND CHECKLIST + ACTIONS -->
+        <div class="actions-card">
+          <div>
+            <div class="card-title" style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;">Send Checklist</div>
+            <div style="font-size:10px;color:var(--ink3);margin-top:3px;line-height:1.5;">All items must be green before sending.</div>
+          </div>
+
+          <div class="checklist">
+            <div class="check-item ok" id="chk-user">
+              <div class="check-dot"></div>Sender selected
+            </div>
+            <div class="check-item" id="chk-to">
+              <div class="check-dot"></div>Recipient email entered
+            </div>
+            <div class="check-item" id="chk-subject">
+              <div class="check-dot"></div>Subject line filled
+            </div>
+            <div class="check-item" id="chk-gif">
+              <div class="check-dot"></div>GIF uploaded
+            </div>
+            <div class="check-item" id="chk-code">
+              <div class="check-dot"></div>Secret code entered
+            </div>
+          </div>
+
+          <div class="action-divider"></div>
+
+          <div class="send-status sending" id="send-sending">
+            <div class="spinner spinner-amber"></div>
+            <span>Sending email…</span>
+          </div>
+          <div class="send-status sent" id="send-sent">
+            <span style="font-size:14px;">✓</span>
+            <div>
+              <div style="font-weight:600;">Email sent!</div>
+              <div id="send-sent-detail" style="opacity:0.75;margin-top:1px;"></div>
+            </div>
+          </div>
+          <div class="send-status send-err" id="send-err">
+            <span style="font-size:14px;">✗</span>
+            <span id="send-err-msg">Send failed.</span>
+          </div>
+
+          <button class="btn btn-green" id="send-btn"
+            style="width:100%;justify-content:center;padding:12px;"
+            onclick="sendEmail()" disabled>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            Send Email
+          </button>
+
+          <div class="action-divider"></div>
+
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--ink2);margin-bottom:6px;">API Endpoint</div>
+            <div style="font-size:10px;color:var(--ink3);line-height:1.6;">
+              GIF is sent as base64 in the request body. Backend embeds it as a CID inline attachment.
+            </div>
+            <div style="margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:10px;color:var(--ink2);font-family:'JetBrains Mono',monospace;word-break:break-all;" id="api-endpoint-preview">
+              POST /api/email/send_gif_mail
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="tmsg">Done</span>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────
+const API_BASE = 'https://api.scoobies.ai';
+
+const USERS = {
+  adhya:    { name: 'Adhya',    email: 'adhya@scoobies.co.in',    meeting: 'https://meeting.scoobies.ai/adhya' },
+  harshita: { name: 'Harshita', email: 'harshita@scoobies.co.in', meeting: 'https://meeting.scoobies.ai/harshita' },
+};
+
+// ─── STATE ────────────────────────────────────────────
+let selectedUser   = 'adhya';
+let gifFile        = null;   // raw File object — sent as binary via FormData
+let codeEntered    = false;
+
+// ─── INIT ─────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const u = sessionStorage.getItem('sa_username');
+  if (u) {
+    const av = document.getElementById('sb-av');
+    const nm = document.getElementById('sb-name');
+    if (av) av.textContent = u[0].toUpperCase();
+    if (nm) nm.textContent = u;
+  }
+  updatePreview();
+  updateChecklist();
+});
+
+// ─── USER SELECT ──────────────────────────────────────
+function selectUser(u) {
+  selectedUser = u;
+  document.getElementById('opt-adhya').classList.toggle('sel',    u === 'adhya');
+  document.getElementById('opt-harshita').classList.toggle('sel', u === 'harshita');
+  const user = USERS[u];
+  document.getElementById('meeting-url').textContent   = user.meeting;
+  document.getElementById('prev-from').textContent     = user.email;
+  document.getElementById('prev-cta-link').textContent = user.meeting.replace('https://', '');
+  updatePreview();
+  updateChecklist();
+}
+
+// ─── GIF UPLOAD ───────────────────────────────────────
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('gif-upload-zone').classList.add('drag-over');
+}
+function onDragLeave(e) {
+  document.getElementById('gif-upload-zone').classList.remove('drag-over');
+}
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('gif-upload-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) loadGifFile(file);
+}
+function onFileChange(e) {
+  const file = e.target.files[0];
+  if (file) loadGifFile(file);
+}
+
+function loadGifFile(file) {
+  if (!file.type.includes('gif')) {
+    showToast('Please select a .gif file', true);
+    return;
+  }
+  gifFile = file;  // store the raw File — no base64 conversion needed
+
+  // Preview via object URL — zero memory overhead, works for any size
+  const objectUrl = URL.createObjectURL(file);
+
+  const zone = document.getElementById('gif-upload-zone');
+  const wrap = document.getElementById('gif-loaded-wrap');
+  zone.style.display = 'none';
+  wrap.style.display = 'flex';
+
+  document.getElementById('gif-loaded-img').src = objectUrl;
+  document.getElementById('gif-loaded-name').textContent = file.name;
+  document.getElementById('gif-loaded-size').textContent = formatBytes(file.size);
+
+  // Mirror to email preview
+  document.getElementById('prev-gif-img').src = objectUrl;
+  document.getElementById('prev-gif-img').style.display = 'block';
+  document.getElementById('prev-gif-empty').style.display = 'none';
+  document.getElementById('prev-gif-cta').style.display = 'block';
+
+  updateChecklist();
+}
+
+function clearGif() {
+  gifFile = null;
+  document.getElementById('gif-upload-zone').style.display = 'flex';
+  document.getElementById('gif-loaded-wrap').style.display = 'none';
+  document.getElementById('gif-file-input').value = '';
+  document.getElementById('prev-gif-img').style.display = 'none';
+  document.getElementById('prev-gif-img').src = '';
+  document.getElementById('prev-gif-empty').style.display = 'flex';
+  document.getElementById('prev-gif-cta').style.display = 'none';
+  updateChecklist();
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+
+// ─── SECRET CODE ──────────────────────────────────────
+function onCodeInput() {
+  const val = document.getElementById('inp-code').value;
+  codeEntered = val.length >= 4;
+  const st    = document.getElementById('code-status');
+  const stTxt = document.getElementById('code-status-text');
+  if (!val) {
+    st.className = 'code-status empty';
+    stTxt.textContent = 'Enter the shared secret code to unlock sending';
+  } else if (codeEntered) {
+    st.className = 'code-status valid';
+    stTxt.textContent = 'Code entered — will be verified server-side';
+  } else {
+    st.className = 'code-status invalid';
+    stTxt.textContent = 'Code too short (minimum 4 characters)';
+  }
+  updateChecklist();
+}
+
+function toggleCodeVis() {
+  const inp  = document.getElementById('inp-code');
+  const icon = document.getElementById('eye-icon');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+  } else {
+    inp.type = 'password';
+    icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  }
+}
+
+// ─── PREVIEW ──────────────────────────────────────────
+function updatePreview() {
+  const to      = document.getElementById('inp-to').value.trim() || '—';
+  const subject = document.getElementById('inp-subject').value.trim() || '(no subject)';
+  const body    = document.getElementById('inp-body').value.trim() || 'Your message will appear here.';
+  const user    = USERS[selectedUser];
+  document.getElementById('prev-to').textContent      = to;
+  document.getElementById('prev-from').textContent    = user.email;
+  document.getElementById('prev-subject').textContent = subject;
+  document.getElementById('prev-body').textContent    = body;
+  document.getElementById('prev-cta-link').textContent = user.meeting.replace('https://', '');
+}
+
+// ─── CHECKLIST ────────────────────────────────────────
+function updateChecklist() {
+  const to      = document.getElementById('inp-to').value.trim();
+  const subject = document.getElementById('inp-subject').value.trim();
+  const checks = {
+    'chk-user':    true,
+    'chk-to':      to.length > 0 && to.includes('@'),
+    'chk-subject': subject.length > 0,
+    'chk-gif':     !!gifFile,
+    'chk-code':    codeEntered,
+  };
+  let allGood = true;
+  Object.entries(checks).forEach(([id, ok]) => {
+    const el = document.getElementById(id);
+    el.classList.toggle('ok',   ok);
+    el.classList.toggle('fail', !ok);
+    if (!ok) allGood = false;
+  });
+  document.getElementById('send-btn').disabled = !allGood;
+
+  document.getElementById('api-endpoint-preview').textContent =
+    `POST /api/email/send_gif_mail\nmultipart/form-data { sender: "${selectedUser}", to: "${to || '…'}", gif: "<binary>", secret_code: "••••" }`;
+}
+
+// ─── SEND ─────────────────────────────────────────────
+async function sendEmail() {
+  const to      = document.getElementById('inp-to').value.trim();
+  const subject = document.getElementById('inp-subject').value.trim();
+  const body    = document.getElementById('inp-body').value.trim();
+  const code    = document.getElementById('inp-code').value;
+  const user    = USERS[selectedUser];
+
+  resetSendStatus();
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div> Sending…`;
+  document.getElementById('send-sending').classList.add('show');
+
+  try {
+    const token = sessionStorage.getItem('sa_token');
+    // No Content-Type header — browser sets it automatically with the correct
+    // multipart boundary when the body is FormData.
+    const headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const fd = new FormData();
+    fd.append('sender',      selectedUser);
+    fd.append('to_email',    to);
+    fd.append('subject',     subject);
+    fd.append('body_text',   body);
+    fd.append('meeting_url', user.meeting);
+    fd.append('secret_code', code);
+    fd.append('gif_file',    gifFile, gifFile.name);  // raw binary — no base64
+
+    const res = await fetch(`${API_BASE}/api/email/send_gif_mail`, {
+      method: 'POST',
+      headers,
+      body: fd,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || err.message || `Failed (${res.status})`);
+    }
+
+    document.getElementById('send-sending').classList.remove('show');
+    document.getElementById('send-sent').classList.add('show');
+    document.getElementById('send-sent-detail').textContent = `Sent to ${to}`;
+    showToast('Email sent!', false, true);
+
+  } catch (e) {
+    document.getElementById('send-sending').classList.remove('show');
+    document.getElementById('send-err-msg').textContent = e.message;
+    document.getElementById('send-err').classList.add('show');
+    showToast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Email`;
+    updateChecklist();
+  }
+}
+
+function resetSendStatus() {
+  ['send-sending','send-sent','send-err'].forEach(id =>
+    document.getElementById(id).classList.remove('show'));
+}
+
+// ─── UTILS ────────────────────────────────────────────
+let _tt;
+function showToast(m, isErr=false, isOk=false) {
+  const t = document.getElementById('toast');
+  document.getElementById('tmsg').textContent = m;
+  t.classList.remove('err','ok');
+  if (isErr) t.classList.add('err'); else if (isOk) t.classList.add('ok');
+  t.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+['inp-to','inp-subject','inp-body'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateChecklist);
+});
+</script>
+</body>
+</html>
